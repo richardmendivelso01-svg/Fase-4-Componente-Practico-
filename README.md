@@ -1,11 +1,6 @@
 # Fase-4-Componente-Practico-
 implementar la metodología de desarrollo, análisis de requerimientos en el desarrollo del prototipo funcional que debe tener un nivel de maduración tecnológica TRL5 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+
 /* Fase 4 Componente Practico 
  Universidad Nacional Abierta y a Distancia UNAD
 Proyecto de Grado: Sistema de Gestión Agrícola para la Comercialización de Cosechas - UNAD (TRL 5)
@@ -21,7 +16,12 @@ Rocio Zenit Bautista Rojas
 Kelsen German Gongora Zambrano 
 Yulieth Valentina Suarez 
  */
-
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 namespace SistemaAgro_UNAD_Fase4
 {
     // Modelo de datos alineado con tu proyecto de grado
