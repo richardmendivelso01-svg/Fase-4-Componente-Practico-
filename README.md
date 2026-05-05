@@ -24,7 +24,7 @@ using System.Collections.Generic;
 using System.Linq;
 namespace SistemaAgro_UNAD_Fase4
 {
-    // Modelo de datos alineado con tu proyecto de grado
+
     public class Producto
     {
         public int Id { get; set; }
