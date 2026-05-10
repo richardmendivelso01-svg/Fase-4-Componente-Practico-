@@ -15,16 +15,17 @@ Richard Sneyder Mendivelso Romero
 Rocio Zenit Bautista Rojas
 Kelsen German Gongora Zambrano 
 Yulieth Valentina Suarez 
- */
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 namespace SistemaAgro_UNAD_Fase4
 {
-
     public class Producto
     {
         public int Id { get; set; }
@@ -55,42 +56,44 @@ namespace SistemaAgro_UNAD_Fase4
                 Console.Clear();
                 Console.WriteLine("==================================================");
                 Console.WriteLine("   SISTEMA DE GESTIÓN AGRÍCOLA - UNAD (TRL 5)     ");
+                Console.WriteLine("   MÓDULO DE INGENIERÍA CON CRUD COMPLETO         ");
                 Console.WriteLine("==================================================");
-                Console.WriteLine("1. Registrar Producto (Inventario)");
-                Console.WriteLine("2. Ver Stock Actual");
-                Console.WriteLine("3. Registrar Venta (Comercialización)");
-                Console.WriteLine("4. Reporte de Ventas");
-                Console.WriteLine("5. Salir");
+                Console.WriteLine("1. [C] CREATE - Registrar Producto");
+                Console.WriteLine("2. [R] READ   - Ver Inventario / Stock");
+                Console.WriteLine("3. [U] UPDATE - Modificar Producto existente");
+                Console.WriteLine("4. [D] DELETE - Eliminar Producto");
+                Console.WriteLine("5. REGISTRAR VENTA (Comercialización)");
+                Console.WriteLine("6. REPORTE DE VENTAS");
+                Console.WriteLine("7. Salir");
                 Console.Write("\nSeleccione una opción: ");
 
                 string opcion = Console.ReadLine();
                 switch (opcion)
                 {
                     case "1": MenuRegistrar(); break;
-                    case "2": MenuVerStock(); break;
-                    case "3": MenuVenta(); break;
-                    case "4": MenuReporte(); break;
-                    case "5": continuar = false; break;
+                    case "2": MenuVerStock(); Pausar(); break;
+                    case "3": MenuActualizar(); break;
+                    case "4": MenuEliminar(); break;
+                    case "5": MenuVenta(); break;
+                    case "6": MenuReporte(); break;
+                    case "7": continuar = false; break;
                     default: Console.WriteLine("Opción no válida."); Pausar(); break;
                 }
             }
         }
 
+        // --- C: CREATE ---
         static void MenuRegistrar()
         {
             Console.WriteLine("\n--- Nuevo Registro de Cosecha ---");
             Producto p = new Producto();
-            p.Id = inventario.Count + 1;
+            p.Id = inventario.Count > 0 ? inventario.Max(x => x.Id) + 1 : 1;
 
             Console.Write("Nombre del producto: ");
             p.Nombre = Console.ReadLine();
-
-            // Usamos TryParse para que no se rompa si el usuario escribe letras
             p.Stock = LeerDouble("Cantidad en Stock: ");
-
             Console.Write("Unidad de medida (kg, bulto, etc): ");
             p.Unidad = Console.ReadLine();
-
             p.PrecioUnitario = LeerDecimal("Precio unitario de venta: ");
 
             inventario.Add(p);
@@ -98,96 +101,129 @@ namespace SistemaAgro_UNAD_Fase4
             Pausar();
         }
 
+        // --- R: READ ---
         static void MenuVerStock()
         {
             Console.WriteLine("\n--- Estado de Inventario Actual ---");
-            // Ajustamos el espaciado para que las columnas coincidan
             Console.WriteLine("{0,-5} | {1,-15} | {2,-10} | {3,-10} | {4,-12}", "ID", "Nombre", "Stock", "Unidad", "Precio Unit.");
             Console.WriteLine("----------------------------------------------------------------------");
-
             foreach (var p in inventario)
             {
                 Console.WriteLine("{0,-5} | {1,-15} | {2,-10} | {3,-10} | ${4,-12:N0}",
                     p.Id, p.Nombre, p.Stock, p.Unidad, p.PrecioUnitario);
             }
+        }
+
+        // --- U: UPDATE ---
+        static void MenuActualizar()
+        {
+            MenuVerStock();
+            Console.Write("\nIngrese el ID del producto a modificar: ");
+            if (int.TryParse(Console.ReadLine(), out int id))
+            {
+                var p = inventario.FirstOrDefault(x => x.Id == id);
+                if (p != null)
+                {
+                    Console.Write($"Nuevo nombre ({p.Nombre}): ");
+                    string nuevoNombre = Console.ReadLine();
+                    if (!string.IsNullOrEmpty(nuevoNombre)) p.Nombre = nuevoNombre;
+
+                    p.Stock = LeerDouble($"Nuevo stock ({p.Stock}): ");
+                    p.PrecioUnitario = LeerDecimal($"Nuevo precio ({p.PrecioUnitario}): ");
+
+                    Console.WriteLine("\n[EXITO] Producto actualizado.");
+                }
+                else Console.WriteLine("[!] ID no encontrado.");
+            }
+            else Console.WriteLine("[!] Entrada inválida.");
             Pausar();
         }
 
+        // --- D: DELETE ---
+        static void MenuEliminar()
+        {
+            MenuVerStock();
+            Console.Write("\nID del producto a eliminar: ");
+            if (int.TryParse(Console.ReadLine(), out int id))
+            {
+                int eliminados = inventario.RemoveAll(x => x.Id == id);
+                if (eliminados > 0) Console.WriteLine("[OK] Producto eliminado satisfactoriamente.");
+                else Console.WriteLine("[!] No se encontró ningún producto con ese ID.");
+            }
+            else Console.WriteLine("[!] Error: Debe ingresar un número de ID válido.");
+            Pausar();
+        }
+
+        // --- LÓGICA DE NEGOCIO (VENTAS) ---
         static void MenuVenta()
         {
             Console.WriteLine("\n--- Registrar Venta (Comercialización) ---");
             if (inventario.Count == 0) { Console.WriteLine("No hay productos registrados."); Pausar(); return; }
+            MenuVerStock();
 
-            MenuVerStock(); // Mostrar lista para ver el ID
-
-            int id = (int)LeerDouble("\nIngrese el ID (número) del producto a vender: ");
-            var prod = inventario.FirstOrDefault(x => x.Id == id);
-
-            if (prod != null)
+            Console.Write("\nIngrese el ID del producto a vender: ");
+            if (int.TryParse(Console.ReadLine(), out int id))
             {
-                double cant = LeerDouble($"Cantidad a vender de {prod.Nombre} (Máx {prod.Stock}): ");
-
-                if (cant <= prod.Stock && cant > 0)
+                var prod = inventario.FirstOrDefault(x => x.Id == id);
+                if (prod != null)
                 {
-                    prod.Stock -= cant;
-                    Venta v = new Venta
+                    double cant = LeerDouble($"Cantidad a vender (Máx {prod.Stock}): ");
+                    if (cant <= prod.Stock && cant > 0)
                     {
-                        Fecha = DateTime.Now,
-                        Producto = prod.Nombre,
-                        Cantidad = cant,
-                        Total = (decimal)cant * prod.PrecioUnitario
-                    };
-                    historicoVentas.Add(v);
-                    Console.WriteLine($"\n[VENTA REALIZADA] Total cobrado: ${v.Total:N0}");
+                        prod.Stock -= cant;
+                        historicoVentas.Add(new Venta
+                        {
+                            Fecha = DateTime.Now,
+                            Producto = prod.Nombre,
+                            Cantidad = cant,
+                            Total = (decimal)cant * prod.PrecioUnitario
+                        });
+                        Console.WriteLine($"\n[VENTA REALIZADA] Total: ${((decimal)cant * prod.PrecioUnitario):N0}");
+                    }
+                    else Console.WriteLine("[ERROR] Cantidad no válida.");
                 }
-                else
-                {
-                    Console.WriteLine("[ERROR] Cantidad no válida o superior al stock.");
-                }
+                else Console.WriteLine("[ERROR] ID no existe.");
             }
-            else
-            {
-                Console.WriteLine("[ERROR] El ID ingresado no existe.");
-            }
+            else Console.WriteLine("[!] Entrada inválida.");
             Pausar();
         }
 
         static void MenuReporte()
         {
-            Console.WriteLine("\n--- Reporte Consolidado de Ventas ---");
-            decimal totalGeneral = 0;
+            Console.WriteLine("\n--- Reporte de Ventas ---");
+            decimal total = 0;
             foreach (var v in historicoVentas)
             {
-                Console.WriteLine($"{v.Fecha:dd/MM/yyyy} | {v.Producto} | Cant: {v.Cantidad} | Subtotal: ${v.Total:N0}");
-                totalGeneral += v.Total;
+                Console.WriteLine($"{v.Fecha:dd/MM/yyyy} | {v.Producto} | Cant: {v.Cantidad} | ${v.Total:N0}");
+                total += v.Total;
             }
-            Console.WriteLine($"\nTOTAL INGRESOS: ${totalGeneral:N0}");
+            Console.WriteLine($"\nTOTAL INGRESOS: ${total:N0}");
             Pausar();
         }
 
-        // MÉTODOS DE APOYO PARA EVITAR CRASHES
+        // --- VALIDACIONES ---
         static double LeerDouble(string mensaje)
         {
-            double resultado;
+            double r;
             while (true)
             {
                 Console.Write(mensaje);
-                if (double.TryParse(Console.ReadLine(), out resultado)) return resultado;
-                Console.WriteLine("[!] Error: Ingrese un valor numérico válido.");
+                if (double.TryParse(Console.ReadLine(), out r)) return r;
+                Console.WriteLine("[!] Ingrese un número válido.");
             }
         }
 
         static decimal LeerDecimal(string mensaje)
         {
-            decimal resultado;
+            decimal r;
             while (true)
             {
                 Console.Write(mensaje);
-                if (decimal.TryParse(Console.ReadLine(), out resultado)) return resultado;
-                Console.WriteLine("[!] Error: Ingrese un valor numérico (dinero) válido.");
+                if (decimal.TryParse(Console.ReadLine(), out r)) return r;
+                Console.WriteLine("[!] Ingrese un precio válido.");
             }
         }
 
-        static void Pausar() { Console.WriteLine("\nPresione cualquier tecla para continuar..."); Console.ReadKey(); }
+        static void Pausar() { Console.WriteLine("\nPresione cualquier tecla..."); Console.ReadKey(); }
     }
 }
